@@ -42,11 +42,9 @@ async function getAuthenticated(): Promise<Credentials> {
             }
             const tokenResponse = await oauth2Client.getToken(code);
             const tokens: Credentials = tokenResponse.tokens;
+
             server.close();
-            if (server.listening) {
-              console.log('Closing server...');
-              destroyer(server);
-            }
+            destroyer(server);
             resolve(tokens);
           }
         } catch (e) {
@@ -71,6 +69,7 @@ async function main() {
       console.log(tokens.refresh_token);
       console.log('-------------------------------------------');
       console.log('Place this refresh token in your .env file');
+      process.exit(0);
     } else {
       console.log(
         '❌ FAILED TO GET A REFRESH TOKEN. This might happen if you have already authorized this app.',
@@ -78,9 +77,11 @@ async function main() {
       console.log(
         'To fix this, go to https://myaccount.google.com/permissions and remove access for your app, then try again.',
       );
+      process.exit(1);
     }
   } catch (e) {
     console.error('Authentication failed:', e);
+    process.exit(1);
   }
 }
 
