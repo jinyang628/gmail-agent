@@ -1,84 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server';
-
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-export async function GET(request: NextRequest) {
+// Initialize the Gmail API client
+const gmail = google.gmail('v1');
+
+// Create OAuth2 client
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'http://localhost:3000/auth/callback', // This won't be used in production
+);
+
+// Set credentials using refresh token
+oauth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+});
+
+export default async function handler(request: VercelRequest, response: VercelResponse) {
+  // Verify the request is from Vercel Cron
+  if (request.headers['x-vercel-cron'] !== 'true') {
+    return response.status(401).json({
+      error: 'Unauthorized',
+    });
+  }
+
   try {
-    // Verify the request is from Vercel Cron (optional but recommended)
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Initialize Gmail API with service account
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        type: 'service_account',
-        project_id: process.env.GOOGLE_PROJECT_ID,
-        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-      },
-      scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-      subject: process.env.GMAIL_USER_EMAIL, // The email to impersonate
+    // Set auth client
+    google.options({
+      auth: oauth2Client,
     });
 
-    const gmail = google.gmail({ version: 'v1', auth });
+    // Get messages from the last 24 hours
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    const query = `after:${date.getTime() / 1000}`;
 
-    // Get unread emails count
-    const response = await gmail.users.messages.list({
+    const res = await gmail.users.messages.list({
       userId: 'me',
-      q: 'is:unread',
+      q: query,
     });
 
-    const unreadCount = response.data.messages?.length || 0;
-    const timestamp = new Date().toISOString();
+    // Process the messages here
+    const messages = res.data.messages || [];
+    console.log(`Found ${messages.length} messages in the last 24 hours`);
 
-    console.log(`[${timestamp}] Unread emails: ${unreadCount}`);
+    // Add your email processing logic here
 
-    // Optional: Send notification if count is high
-    if (unreadCount > 10) {
-      await sendNotification(unreadCount);
-    }
-
-    return NextResponse.json({
+    return response.status(200).json({
       success: true,
-      unreadCount,
-      timestamp,
-      message: `Found ${unreadCount} unread emails`,
+      message: `Successfully processed ${messages.length} messages`,
     });
   } catch (error) {
-    console.error('Gmail monitoring error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 },
-    );
-  }
-}
-
-async function sendNotification(count: number) {
-  // Example: Send to a webhook (Slack, Discord, etc.)
-  const webhookUrl = process.env.WEBHOOK_URL;
-
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: `🚨 Gmail Alert: You have ${count} unread emails!`,
-        }),
-      });
-    } catch (error) {
-      console.error('Failed to send notification:', error);
-    }
+    console.error('Error processing emails:', error);
+    return response.status(500).json({
+      error: 'Failed to process emails',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

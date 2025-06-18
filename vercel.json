@@ -1,4 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/cron/gmail/monitor",
+      "dest": "/api/cron/gmail/monitor.ts"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/gmail/monitor",
