@@ -23,7 +23,7 @@ cp .env.example .env
 - Add authorized redirect URIs:
 
   1. `http://localhost:3000/auth/callback`
-  2. `https://your-vercel-app.vercel.app/api/auth/callback`
+  2. `https://your-vercel-app.vercel.app/api/auth/callback` // Change this URL after vercel deployment below
 
 - Click "Create"
 - Place the Client ID and Client Secret in your .env file
@@ -33,6 +33,27 @@ cp .env.example .env
 ```bash
 # Place the refresh token printed in the terminal in your .env file
 make auth
+```
+
+## Deploy to Vercel
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy (Initial deployment)
+vercel --prod
+
+# Set environment variables
+vercel env add GOOGLE_CLIENT_ID
+vercel env add GOOGLE_CLIENT_SECRET
+vercel env add GOOGLE_REFRESH_TOKEN
+
+# Redeploy with environment variables
+vercel --prod
 ```
 
 ## Style Enforcement
