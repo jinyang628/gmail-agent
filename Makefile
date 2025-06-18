@@ -1,0 +1,2 @@
+lint:
+	npx prettier --write .

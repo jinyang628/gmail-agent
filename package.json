@@ -1,0 +1,36 @@
+{
+  "name": "gmail-agent",
+  "version": "1.0.0",
+  "description": "An AI-powered cron job that helps me manage my Gmail inbox",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jinyang628/gmail-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jinyang628/gmail-agent/issues"
+  },
+  "homepage": "https://github.com/jinyang628/gmail-agent#readme",
+  "dependencies": {
+    "googleapis": "^150.0.1",
+    "next": "^15.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.12"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "autoprefixer": "^10.4.21",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  }
+}
