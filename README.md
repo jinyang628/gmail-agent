@@ -56,6 +56,12 @@ vercel env add GOOGLE_REFRESH_TOKEN
 vercel --prod
 ```
 
+## Manually test whether deployment is successful
+
+```bash
+curl -X GET -H "x-vercel-cron: true" https://your-vercel-app.vercel.app/api/cron/gmail/monitor
+```
+
 ## Style Enforcement
 
 ```bash

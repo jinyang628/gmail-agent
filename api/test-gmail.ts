@@ -6,7 +6,7 @@ const gmail = google.gmail('v1');
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  'http://localhost:3000/auth/callback', // This won't be used in production
+  'http://localhost:3000/auth/callback',
 );
 
 oauth2Client.setCredentials({
@@ -14,38 +14,33 @@ oauth2Client.setCredentials({
 });
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
-  // Only gets triggered by Vercel cron job
-  if (request.headers['x-vercel-cron'] !== 'true') {
-    return response.status(401).json({
-      error: 'Unauthorized',
-    });
-  }
-
   try {
     google.options({
       auth: oauth2Client,
     });
 
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    const query = `after:${date.getTime() / 1000}`;
+    const profile = await gmail.users.getProfile({
+      userId: 'me',
+    });
 
     const res = await gmail.users.messages.list({
       userId: 'me',
-      q: query,
+      maxResults: 10,
     });
 
     const messages = res.data.messages || [];
-    console.log(`Found ${messages.length} messages in the last 24 hours`);
 
     return response.status(200).json({
       success: true,
-      message: `Successfully processed ${messages.length} messages`,
+      profile: profile.data,
+      messageCount: messages.length,
+      messages: messages.slice(0, 5),
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error processing emails:', error);
+    console.error('Test error:', error);
     return response.status(500).json({
-      error: 'Failed to process emails',
+      error: 'Failed to test Gmail API',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
