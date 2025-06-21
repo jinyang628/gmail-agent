@@ -14,5 +14,6 @@ The user wants to IGNORE emails that are:
 1.  **Spam/Junk**: Unsolicited marketing or promotional content.
 2.  **Newsletters**: Automated updates that are not time-sensitive.
 3.  **Social media notifications**: Updates from platforms like LinkedIn, Twitter, etc.
+4. **Automated emails**: Emails that are sent by 3rd party systems, like successful account verification, password resets, job applications, etc.
 
 Analyze the following email and decide if the user should see it. Call the \`shouldUserSeeEmail\` function with your decision.`;

@@ -112,7 +112,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
       const parts = responseData.candidates[0].content.parts;
       const functionCallPart = parts.find((part: any) => part.functionCall);
       const shouldSee: boolean = functionCallPart?.functionCall?.args?.shouldSee;
-      console.log(shouldSee);
       results.push({
         shouldSee,
         subject,
