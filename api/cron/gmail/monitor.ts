@@ -57,8 +57,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
     );
 
     const results: EmailProcessResultType[] = [];
-    console.log(messageDetails);
-
     for (const msg of messageDetails) {
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
@@ -69,10 +67,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: SYSTEM_PROMPT }],
+          },
           contents: [
             {
               role: 'user',
-              parts: [{ text: `${SYSTEM_PROMPT}\n\nSubject: ${subject}\nBody: ${body}` }],
+              parts: [{ text: `Subject: ${subject}\nBody: ${body}` }],
             },
           ],
           tools: [
@@ -107,7 +108,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
         continue;
       }
 
-      const shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+      const shouldSee: boolean =
+        responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+      console.log(shouldSee);
       results.push({
         shouldSee,
         subject,
