@@ -1,8 +1,8 @@
-import { SYSTEM_PROMPT, getLlmApiUrl } from '@/utils/llm';
+import { SYSTEM_PROMPT, getLlmApiUrl } from '@/utils/llm.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-import { EmailProcessResultType } from '@/types/result';
+import { EmailProcessResultType } from '@/types/result.js';
 
 const gmail = google.gmail('v1');
 
