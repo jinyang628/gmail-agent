@@ -114,12 +114,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
       const shouldSee: boolean = functionCallPart?.functionCall?.args?.shouldSee;
       if (!shouldSee) {
         await gmail.users.messages.modify({
-          userId: 'me', 
+          userId: 'me',
           id: msg.id!,
           requestBody: {
             removeLabelIds: ['UNREAD'],
-            addLabelIds: ['Label_gmail-agent']
-          }
+            addLabelIds: ['Label_gmail-agent'],
+          },
         });
       }
       results.push({
