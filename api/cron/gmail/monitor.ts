@@ -13,7 +13,6 @@ oauth2Client.setCredentials({
 });
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
-  // Only gets triggered by Vercel cron job
   if (request.headers['x-vercel-cron'] !== 'true') {
     return response.status(401).json({
       error: 'Unauthorized',
@@ -36,7 +35,25 @@ export default async function handler(request: VercelRequest, response: VercelRe
     });
 
     const messages = res.data.messages || [];
-    console.log(`Found ${messages.length} unread messages in the last 24 hours`);
+    const messageDetails = await Promise.all(
+      messages.map(async (msg) => {
+        const detail = await gmail.users.messages.get({
+          userId: 'me',
+          id: msg.id!,
+          format: 'full',
+        });
+        return detail.data;
+      }),
+    );
+
+    messageDetails.forEach((msg) => {
+      const headers = msg.payload?.headers || [];
+      const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
+      const body = msg.snippet || 'No content available';
+
+      console.log(`Subject: ${subject}`);
+      console.log(`Content: ${body}`);
+    });
 
     return response.status(200).json({
       success: true,
