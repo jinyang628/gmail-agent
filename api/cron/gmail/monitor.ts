@@ -1,8 +1,8 @@
+import { SYSTEM_PROMPT, getLlmApiUrl } from '@/utils/llm';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-import { EmailProcessResultType } from '../../../types/result.js';
-import { SYSTEM_PROMPT, getLlmApiUrl } from '../../../utils/llm.js';
+import { EmailProcessResultType } from '@/types/result';
 
 const gmail = google.gmail('v1');
 
@@ -108,8 +108,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
         continue;
       }
 
-      const shouldSee: boolean =
-        responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+      const parts = responseData.candidates[0].content.parts;
+      const functionCallPart = parts.find((part: any) => part.functionCall);
+      const shouldSee: boolean = functionCallPart?.functionCall?.args?.shouldSee;
       console.log(shouldSee);
       results.push({
         shouldSee,
