@@ -27,7 +27,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const date = new Date();
     date.setDate(date.getDate() - 1);
-    const query = `is:unread after:${date.getTime() / 1000}`;
+    const queryDate = Math.floor(date.getTime() / 1000);
+    const query = `is:unread after:${queryDate} (in:inbox OR is:important)`;
 
     const res = await gmail.users.messages.list({
       userId: 'me',
