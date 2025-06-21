@@ -1,3 +1,4 @@
+import { getLlmApiUrl, getSystemPrompt } from '@/llm/gemini';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
@@ -13,6 +14,13 @@ oauth2Client.setCredentials({
 });
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  if (!geminiApiKey) {
+    return response.status(500).json({
+      error: 'GEMINI_API_KEY is not set',
+    });
+  }
+
   if (request.headers['x-vercel-cron'] !== 'true') {
     return response.status(401).json({
       error: 'Unauthorized',
@@ -46,13 +54,55 @@ export default async function handler(request: VercelRequest, response: VercelRe
       }),
     );
 
-    messageDetails.forEach((msg) => {
+    messageDetails.forEach(async (msg) => {
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
       const body = msg.snippet || 'No content available';
-
+      console.log(`Email ID: ${msg.id}`);
       console.log(`Subject: ${subject}`);
-      console.log(`Content: ${body}`);
+      console.log(`Body: ${body}`);
+      const response = await fetch(getLlmApiUrl(geminiApiKey), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'system',
+              parts: [{ text: getSystemPrompt(subject, body) }],
+            },
+            {
+              role: 'user',
+              parts: [{ text: body }],
+            },
+          ],
+          tools: [
+            {
+              functionDeclarations: [
+                {
+                  name: 'shouldUserSeeEmail',
+                  description: 'Determine if the user needs to see this email',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      shouldSee: {
+                        type: 'boolean',
+                        description: 'Whether the user needs to see this email',
+                      },
+                    },
+                    required: ['shouldSee'],
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const responseData = await response.json();
+      const shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+      console.log(`Should user see email? ${shouldSee}`);
     });
 
     return response.status(200).json({

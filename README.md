@@ -51,6 +51,7 @@ vercel --prod
 vercel env add GOOGLE_CLIENT_ID
 vercel env add GOOGLE_CLIENT_SECRET
 vercel env add GOOGLE_REFRESH_TOKEN
+vercel env add GEMINI_API_KEY # You can get this from https://aistudio.google.com/apikey
 
 # Redeploy with environment variables
 vercel --prod
