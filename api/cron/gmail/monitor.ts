@@ -37,34 +37,14 @@ export default async function handler(request: VercelRequest, response: VercelRe
       auth: oauth2Client,
     });
 
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    const queryDate = Math.floor(date.getTime() / 1000);
-    const query = `is:unread after:${queryDate} (in:inbox OR is:important)`;
-
-    const res = await gmail.users.messages.list({
-      userId: 'me',
-      q: query,
-    });
-
-    const messages = res.data.messages || [];
-    const messageDetails = await Promise.all(
-      messages.map(async (msg) => {
-        const detail = await gmail.users.messages.get({
-          userId: 'me',
-          id: msg.id!,
-          format: 'full',
-        });
-        return detail.data;
-      }),
-    );
-
     await createGmailAgentLabel();
 
+    const messages = await getRecentUnprocessedMessages();
+
     const results: EmailProcessResultType[] = [];
-    for (const msg of messageDetails) {
+    for (const msg of messages) {
       const headers = msg.payload?.headers || [];
-      const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
+      const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
       const body = msg.snippet || 'No content available';
       const response = await fetch(getLlmApiUrl(geminiApiKey), {
         method: 'POST',
@@ -141,6 +121,31 @@ export default async function handler(request: VercelRequest, response: VercelRe
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
+}
+
+async function getRecentUnprocessedMessages(): Promise<any[]> {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  const queryDate = Math.floor(date.getTime() / 1000);
+  const query = `is:unread after:${queryDate} (in:inbox OR is:important)`;
+
+  const res = await gmail.users.messages.list({
+    userId: 'me',
+    q: query,
+  });
+
+  const messages = res.data.messages || [];
+  const messageDetails = await Promise.all(
+    messages.map(async (msg) => {
+      const detail = await gmail.users.messages.get({
+        userId: 'me',
+        id: msg.id!,
+        format: 'full',
+      });
+      return detail.data;
+    }),
+  );
+  return messageDetails;
 }
 
 async function createGmailAgentLabel() {
