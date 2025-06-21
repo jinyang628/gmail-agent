@@ -1,3 +1,4 @@
+import { SYSTEM_PROMPT, getLlmApiUrl } from '@/utils/llm';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
@@ -55,10 +56,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
       }),
     );
 
-    let shouldSee: boolean = false;
     const results: EmailProcessResultType[] = [];
     console.log(messageDetails);
-    messageDetails.forEach(async (msg) => {
+
+    for (const msg of messageDetails) {
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
       const body = msg.snippet || 'No content available';
@@ -102,13 +103,20 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
 
       const responseData = (await response.json()) as any;
-      console.log(`"LLM Response: ${responseData}`);
-      shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+
+      console.log('LLM Response:', JSON.stringify(responseData, null, 2));
+
+      if (!responseData.candidates || responseData.candidates.length === 0) {
+        console.error('Error: LLM response does not contain candidates.', responseData.error || '');
+        continue;
+      }
+
+      const shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
       results.push({
         shouldSee,
         subject,
       });
-    });
+    }
 
     return response.status(200).json({
       results,
@@ -122,22 +130,3 @@ export default async function handler(request: VercelRequest, response: VercelRe
     });
   }
 }
-
-const MODEL_NAME: string = 'gemini-2.5-flash-preview-04-17';
-function getLlmApiUrl(geminiApiKey: string): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
-}
-const SYSTEM_PROMPT: string = `
-You are a helpful assistant for a busy professional. Your task is to analyze an email and determine if it's important enough for the user to see.
-
-The user is looking for emails that are:
-1.  **Urgent**: Requiring immediate attention.
-2.  **Important**: Related to work, personal finance, or critical projects.
-3.  **From key contacts**: From their boss, family, or important clients.
-
-The user wants to IGNORE emails that are:
-1.  **Spam/Junk**: Unsolicited marketing or promotional content.
-2.  **Newsletters**: Automated updates that are not time-sensitive.
-3.  **Social media notifications**: Updates from platforms like LinkedIn, Twitter, etc.
-
-Analyze the following email and decide if the user should see it. Call the \`shouldUserSeeEmail\` function with your decision.`;
