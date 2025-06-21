@@ -1,6 +1,7 @@
 // js suffix and relative path is required for the vercel build to work
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
+import httpStatus from 'http-status';
 
 import { EmailProcessResultType } from '../../../types/result.js';
 import { SYSTEM_PROMPT, getLlmApiUrl } from '../../../utils/llm.js';
@@ -19,13 +20,13 @@ oauth2Client.setCredentials({
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
-    return response.status(500).json({
+    return response.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: 'GEMINI_API_KEY is not set',
     });
   }
 
   if (request.headers['x-vercel-cron'] !== 'true') {
-    return response.status(401).json({
+    return response.status(httpStatus.UNAUTHORIZED).json({
       error: 'Unauthorized',
     });
   }
@@ -56,6 +57,23 @@ export default async function handler(request: VercelRequest, response: VercelRe
         return detail.data;
       }),
     );
+
+    // Create label if it doesn't exist
+    try {
+      await gmail.users.labels.create({
+        userId: 'me',
+        requestBody: {
+          name: 'gmail-agent',
+          labelListVisibility: 'labelShow',
+          messageListVisibility: 'show',
+        },
+      });
+    } catch (error: any) {
+      // Ignore error if label already exists
+      if (error.code !== httpStatus.CONFLICT) {
+        throw error;
+      }
+    }
 
     const results: EmailProcessResultType[] = [];
     for (const msg of messageDetails) {
@@ -128,13 +146,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
     }
 
-    return response.status(200).json({
+    return response.status(httpStatus.OK).json({
       results,
       message: `Successfully processed ${messages.length} unread messages`,
     });
   } catch (error) {
     console.error('Error processing emails:', error);
-    return response.status(500).json({
+    return response.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: 'Failed to process emails',
       details: error instanceof Error ? error.message : 'Unknown error',
     });

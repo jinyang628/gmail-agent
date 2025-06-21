@@ -21,6 +21,7 @@
     "@vercel/node": "^5.2.2",
     "dotenv": "^16.5.0",
     "googleapis": "^150.0.1",
+    "http-status": "^2.1.0",
     "open": "^10.1.2",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "server-destroy": "^1.0.1",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/http-status": "^0.2.30",
     "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
