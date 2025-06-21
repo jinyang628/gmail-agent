@@ -3,11 +3,10 @@ import { google } from 'googleapis';
 
 const gmail = google.gmail('v1');
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  'http://localhost:3000/auth/callback', // This won't be used in production
-);
+const oauth2Client = new google.auth.OAuth2({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+});
 
 oauth2Client.setCredentials({
   refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
