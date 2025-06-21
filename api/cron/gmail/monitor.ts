@@ -100,7 +100,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = (await response.json()) as any;
       const shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
       console.log(`Should user see email? ${shouldSee}`);
     });
