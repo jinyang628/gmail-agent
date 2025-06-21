@@ -1,6 +1,7 @@
-import { getLlmApiUrl, getSystemPrompt } from '@/llm/gemini';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
+
+import { getLlmApiUrl, getSystemPrompt } from '../../../llm/gemini';
 
 const gmail = google.gmail('v1');
 
