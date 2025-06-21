@@ -6,6 +6,7 @@ import httpStatus from 'http-status';
 import { EmailProcessResultType } from '../../../types/result.js';
 import { SYSTEM_PROMPT, getLlmApiUrl } from '../../../utils/llm.js';
 
+const GMAIL_AGENT_LABEL: string = 'gmail-agent';
 const gmail = google.gmail('v1');
 
 const oauth2Client = new google.auth.OAuth2({
@@ -58,22 +59,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       }),
     );
 
-    // Create label if it doesn't exist
-    try {
-      await gmail.users.labels.create({
-        userId: 'me',
-        requestBody: {
-          name: 'gmail-agent',
-          labelListVisibility: 'labelShow',
-          messageListVisibility: 'show',
-        },
-      });
-    } catch (error: any) {
-      // Ignore error if label already exists
-      if (error.code !== httpStatus.CONFLICT) {
-        throw error;
-      }
-    }
+    await createGmailAgentLabel();
 
     const results: EmailProcessResultType[] = [];
     for (const msg of messageDetails) {
@@ -132,7 +118,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
           id: msg.id!,
           requestBody: {
             removeLabelIds: ['UNREAD'],
-            addLabelIds: ['gmail-agent'],
+            addLabelIds: [GMAIL_AGENT_LABEL],
           },
         });
       }
@@ -152,5 +138,23 @@ export default async function handler(request: VercelRequest, response: VercelRe
       error: 'Failed to process emails',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
+  }
+}
+
+async function createGmailAgentLabel() {
+  try {
+    await gmail.users.labels.create({
+      userId: 'me',
+      requestBody: {
+        name: GMAIL_AGENT_LABEL,
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
+      },
+    });
+  } catch (error: any) {
+    // Ignore error if label already exists
+    if (error.code !== httpStatus.CONFLICT) {
+      throw error;
+    }
   }
 }
