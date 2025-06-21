@@ -37,7 +37,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       auth: oauth2Client,
     });
 
-    await createGmailAgentLabel();
+    const gmailAgentLabelId: string = await getOrCreateGmailAgentLabelId();
 
     const messages = await getRecentUnprocessedMessages();
 
@@ -100,7 +100,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
           id: msg.id!,
           requestBody: {
             removeLabelIds: ['UNREAD'],
-            addLabelIds: [GMAIL_AGENT_LABEL],
+            addLabelIds: [gmailAgentLabelId],
           },
         });
       }
@@ -148,9 +148,9 @@ async function getRecentUnprocessedMessages(): Promise<any[]> {
   return messageDetails;
 }
 
-async function createGmailAgentLabel() {
+async function getOrCreateGmailAgentLabelId(): Promise<string> {
   try {
-    await gmail.users.labels.create({
+    const createRes = await gmail.users.labels.create({
       userId: 'me',
       requestBody: {
         name: GMAIL_AGENT_LABEL,
@@ -158,10 +158,19 @@ async function createGmailAgentLabel() {
         messageListVisibility: 'show',
       },
     });
-  } catch (error: any) {
-    // Ignore error if label already exists
-    if (error.code !== httpStatus.CONFLICT) {
-      throw error;
+    if (createRes.data.id) {
+      return createRes.data.id;
     }
+  } catch (error: any) {
+    if (error.code === httpStatus.CONFLICT) {
+      const listRes = await gmail.users.labels.list({ userId: 'me' });
+      const labels = listRes.data.labels || [];
+      const existingLabel = labels.find((label) => label.name === GMAIL_AGENT_LABEL);
+      if (existingLabel?.id) {
+        return existingLabel.id;
+      }
+    }
+    throw error;
   }
+  throw new Error(`Could not create or find the label: ${GMAIL_AGENT_LABEL}`);
 }
