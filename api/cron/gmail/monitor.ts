@@ -27,7 +27,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const date = new Date();
     date.setDate(date.getDate() - 1);
-    const query = `after:${date.getTime() / 1000}`;
+    const query = `is:unread after:${date.getTime() / 1000}`;
 
     const res = await gmail.users.messages.list({
       userId: 'me',
@@ -35,11 +35,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
     });
 
     const messages = res.data.messages || [];
-    console.log(`Found ${messages.length} messages in the last 24 hours`);
+    console.log(`Found ${messages.length} unread messages in the last 24 hours`);
 
     return response.status(200).json({
       success: true,
-      message: `Successfully processed ${messages.length} messages`,
+      message: `Successfully processed ${messages.length} unread messages`,
+      unreadCount: messages.length,
+      query: query,
     });
   } catch (error) {
     console.error('Error processing emails:', error);
