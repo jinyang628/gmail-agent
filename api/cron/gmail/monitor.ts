@@ -1,8 +1,9 @@
-import { SYSTEM_PROMPT, getLlmApiUrl } from '@/utils/llm.js';
+// js suffix and relative path is required for the vercel build to work
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-import { EmailProcessResultType } from '@/types/result.js';
+import { EmailProcessResultType } from '../../../types/result.js';
+import { SYSTEM_PROMPT, getLlmApiUrl } from '../../../utils/llm.js';
 
 const gmail = google.gmail('v1');
 
