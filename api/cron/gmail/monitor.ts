@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-import { EmailProcessResultType } from '../../types/result.js';
-import { SYSTEM_PROMPT, getLlmApiUrl } from '../../utils/llm.js';
+import { EmailProcessResultType } from '../../../types/result.js';
+import { SYSTEM_PROMPT, getLlmApiUrl } from '../../../utils/llm.js';
 
 const gmail = google.gmail('v1');
 
@@ -71,12 +71,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
         body: JSON.stringify({
           contents: [
             {
-              role: 'system',
-              parts: [{ text: SYSTEM_PROMPT }],
-            },
-            {
               role: 'user',
-              parts: [{ text: `Subject: ${subject}\nBody: ${body}` }],
+              parts: [{ text: `${SYSTEM_PROMPT}\n\nSubject: ${subject}\nBody: ${body}` }],
             },
           ],
           tools: [
