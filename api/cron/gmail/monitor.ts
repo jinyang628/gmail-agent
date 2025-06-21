@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
-import { z } from 'zod';
+
+import { EmailProcessResultType } from '@/types/result';
 
 const gmail = google.gmail('v1');
 
@@ -56,6 +57,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     let shouldSee: boolean = false;
     const results: EmailProcessResultType[] = [];
+    console.log(messageDetails);
     messageDetails.forEach(async (msg) => {
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
@@ -141,10 +143,3 @@ The user wants to IGNORE emails that are:
 3.  **Social media notifications**: Updates from platforms like LinkedIn, Twitter, etc.
 
 Analyze the following email and decide if the user should see it. Call the \`shouldUserSeeEmail\` function with your decision.`;
-
-const emailProcessResult = z.object({
-  shouldSee: z.boolean(),
-  subject: z.string(),
-});
-
-type EmailProcessResultType = z.infer<typeof emailProcessResult>;
