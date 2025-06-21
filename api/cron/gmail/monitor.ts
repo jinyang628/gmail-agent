@@ -119,24 +119,20 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
 
       const responseData = (await response.json()) as any;
-
-      console.log('LLM Response:', JSON.stringify(responseData, null, 2));
-
       if (!responseData.candidates || responseData.candidates.length === 0) {
         console.error('Error: LLM response does not contain candidates.', responseData.error || '');
         continue;
       }
-
       const parts = responseData.candidates[0].content.parts;
-      const functionCallPart = parts.find((part: any) => part.functionCall);
-      const shouldSee: boolean = functionCallPart?.functionCall?.args?.shouldSee;
+      console.log('LLM Reasoning:', parts[0].text);
+      const shouldSee: boolean = parts[1].functionCall.args.shouldSee;
       if (!shouldSee) {
         await gmail.users.messages.modify({
           userId: 'me',
           id: msg.id!,
           requestBody: {
             removeLabelIds: ['UNREAD'],
-            addLabelIds: ['Label_gmail-agent'],
+            addLabelIds: ['gmail-agent'],
           },
         });
       }
