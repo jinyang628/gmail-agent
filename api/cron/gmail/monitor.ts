@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
+import { z } from 'zod';
 
 const gmail = google.gmail('v1');
 
@@ -53,6 +54,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
       }),
     );
 
+    let shouldSee: boolean = false;
+    const results: EmailProcessResultType[] = [];
     messageDetails.forEach(async (msg) => {
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
@@ -69,11 +72,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
           contents: [
             {
               role: 'system',
-              parts: [{ text: getSystemPrompt(subject, body) }],
+              parts: [{ text: SYSTEM_PROMPT }],
             },
             {
               role: 'user',
-              parts: [{ text: body }],
+              parts: [{ text: `Subject: ${subject}\nBody: ${body}` }],
             },
           ],
           tools: [
@@ -100,15 +103,16 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
 
       const responseData = (await response.json()) as any;
-      const shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
-      console.log(`Should user see email? ${shouldSee}`);
+      shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
+      results.push({
+        shouldSee,
+        subject,
+      });
     });
 
     return response.status(200).json({
-      success: true,
+      results,
       message: `Successfully processed ${messages.length} unread messages`,
-      unreadCount: messages.length,
-      query: query,
     });
   } catch (error) {
     console.error('Error processing emails:', error);
@@ -123,8 +127,7 @@ const MODEL_NAME: string = 'gemini-2.5-flash-preview-04-17';
 function getLlmApiUrl(geminiApiKey: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
 }
-function getSystemPrompt(subject: string, body: string): string {
-  return `
+const SYSTEM_PROMPT: string = `
 You are a helpful assistant for a busy professional. Your task is to analyze an email and determine if it's important enough for the user to see.
 
 The user is looking for emails that are:
@@ -137,10 +140,11 @@ The user wants to IGNORE emails that are:
 2.  **Newsletters**: Automated updates that are not time-sensitive.
 3.  **Social media notifications**: Updates from platforms like LinkedIn, Twitter, etc.
 
-Analyze the following email and decide if the user should see it. Call the \`shouldUserSeeEmail\` function with your decision.
+Analyze the following email and decide if the user should see it. Call the \`shouldUserSeeEmail\` function with your decision.`;
 
-**Email Subject**: ${subject}
-**Email Body Snippet**:
-${body.substring(0, 500)}...
-`;
-}
+const emailProcessResult = z.object({
+  shouldSee: z.boolean(),
+  subject: z.string(),
+});
+
+type EmailProcessResultType = z.infer<typeof emailProcessResult>;
