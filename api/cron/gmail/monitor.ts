@@ -62,9 +62,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
       const headers = msg.payload?.headers || [];
       const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
       const body = msg.snippet || 'No content available';
-      console.log(`Email ID: ${msg.id}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`Body: ${body}`);
       const response = await fetch(getLlmApiUrl(geminiApiKey), {
         method: 'POST',
         headers: {
@@ -105,6 +102,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
 
       const responseData = (await response.json()) as any;
+      console.log(`"LLM Response: ${responseData}`);
       shouldSee = responseData.candidates[0].content.parts[0].functionCall?.args?.shouldSee;
       results.push({
         shouldSee,
