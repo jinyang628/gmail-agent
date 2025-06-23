@@ -90,7 +90,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         continue;
       }
       const parts = responseData.candidates[0].content.parts;
-      console.log('LLM Reasoning:', parts[0].text);
+      console.log('LLM Response:', parts);
       const functionCallPart = parts.find((part: any) => part.functionCall);
       const shouldSee: boolean = functionCallPart?.functionCall?.args?.shouldSee;
 
