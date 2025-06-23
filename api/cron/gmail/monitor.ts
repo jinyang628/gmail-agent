@@ -39,7 +39,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const gmailAgentLabelId: string = await getOrCreateGmailAgentLabelId();
 
-    const messages = await getRecentUnprocessedMessages();
+    const messages = await getRecentUnprocessedMessages(gmailAgentLabelId);
 
     const results: EmailProcessResultType[] = [];
     for (const msg of messages) {
@@ -123,11 +123,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
   }
 }
 
-async function getRecentUnprocessedMessages(): Promise<any[]> {
+async function getRecentUnprocessedMessages(labelId: string): Promise<any[]> {
   const date = new Date();
   date.setDate(date.getDate() - 1);
   const queryDate = Math.floor(date.getTime() / 1000);
-  const query = `is:unread after:${queryDate} (in:inbox OR is:important)`;
+  const query = `is:unread -label:${labelId} (in:inbox OR is:important) after:${queryDate}`;
 
   const res = await gmail.users.messages.list({
     userId: 'me',
