@@ -28,7 +28,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   if (request.headers['x-vercel-cron'] !== 'true') {
     return response.status(httpStatus.UNAUTHORIZED).json({
-      error: 'Unauthorized',
+      error: 'Unauthorized origin',
+    });
+  }
+
+  if (request.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
+    return response.status(httpStatus.UNAUTHORIZED).json({
+      error: 'Failed to provide correct cron job secret',
     });
   }
 
